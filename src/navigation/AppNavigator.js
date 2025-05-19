@@ -1,46 +1,40 @@
-// src/navigation/AuthNavigator.js
+// src/navigation/AppNavigator.js
 
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { View, ActivityIndicator } from 'react-native';
+import { colors } from '../constants/colors';
+import { useAuth } from '../contexts/AuthContext';
+import AuthNavigator from './AuthNavigator';
+import TabNavigator from './TabNavigator';
 
-// Import des écrans d'authentification
-import WelcomeScreen from '../screens/auth/WelcomeScreen';
-import LoginScreen from '../screens/auth/LoginScreen';
-import RegisterScreen from '../screens/auth/RegisterScreen';
-import PhoneVerificationScreen from '../screens/auth/PhoneVerificationScreen';
-
-// Création du navigateur de pile pour l'authentification
+// Création du navigateur principal
 const Stack = createStackNavigator();
 
-const AuthNavigator = () => {
+const AppNavigator = () => {
+  // Utiliser le contexte d'authentification
+  const { isAuthenticated, loading } = useAuth();
+
+  // Afficher un écran de chargement pendant la vérification
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
-    <Stack.Navigator 
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen 
-        name="Welcome" 
-        component={WelcomeScreen} 
-        options={{ title: 'Bienvenue' }}
-      />
-      <Stack.Screen 
-        name="Login" 
-        component={LoginScreen} 
-        options={{ title: 'Connexion' }}
-      />
-      <Stack.Screen 
-        name="Register" 
-        component={RegisterScreen} 
-        options={{ title: 'Inscription' }}
-      />
-      <Stack.Screen 
-        name="PhoneVerification" 
-        component={PhoneVerificationScreen} 
-        options={{ title: 'Vérification du téléphone' }}
-      />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {isAuthenticated ? (
+        // Si l'utilisateur est authentifié, afficher l'application principale
+        <Stack.Screen name="Main" component={TabNavigator} />
+      ) : (
+        // Sinon, afficher le flux d'authentification
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      )}
     </Stack.Navigator>
   );
 };
 
-export default AuthNavigator;
+export default AppNavigator;

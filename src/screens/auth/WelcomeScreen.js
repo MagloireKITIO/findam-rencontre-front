@@ -1,7 +1,7 @@
 // src/screens/auth/WelcomeScreen.js
 
 import React from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '../../constants/colors';
@@ -12,7 +12,7 @@ const WelcomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       
       {/* Logo et titre */}
       <View style={styles.logoContainer}>
@@ -20,13 +20,11 @@ const WelcomeScreen = () => {
         <Text style={styles.tagline}>Trouvez l'amour au Cameroun</Text>
       </View>
       
-      {/* Image de présentation */}
+      {/* Image de présentation - temporairement remplacée par un placeholder */}
       <View style={styles.imageContainer}>
-        <Image 
-          source={require('../../../assets/welcome.png')} 
-          style={styles.image}
-          resizeMode="contain"
-        />
+        <View style={styles.placeholderImage}>
+          <Text style={styles.placeholderText}>Image de bienvenue</Text>
+        </View>
       </View>
       
       {/* Boutons d'action */}
@@ -86,9 +84,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  image: {
+  placeholderImage: {
     width: '100%',
     height: '80%',
+    backgroundColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  placeholderText: {
+    color: colors.textLight,
+    fontSize: 18,
   },
   buttonsContainer: {
     marginBottom: 30,

@@ -3,6 +3,7 @@
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { theme } from './src/constants/theme';
 import { AuthProvider } from './src/contexts/AuthContext';
@@ -13,8 +14,10 @@ export default function App() {
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
         <AuthProvider>
-          <StatusBar style="auto" />
-          <AppNavigator />
+          <NavigationContainer>
+            <StatusBar style="auto" />
+            <AppNavigator />
+          </NavigationContainer>
         </AuthProvider>
       </PaperProvider>
     </SafeAreaProvider>
