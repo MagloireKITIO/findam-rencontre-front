@@ -6,14 +6,16 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 
+// Import des navigateurs et écrans
+import ProfileNavigator from './ProfileNavigator';
+
 // Écrans principaux (ils seront créés plus tard)
-// Import des écrans à venir:
+// À remplacer au fur et à mesure par les vrais écrans:
 // import DiscoveryScreen from '../screens/discovery/DiscoveryScreen';
 // import NearbyScreen from '../screens/discovery/NearbyScreen';
 // import MatchesScreen from '../screens/discovery/MatchesScreen';
 // import MessagesScreen from '../screens/messaging/MessagesScreen';
 // import EventsScreen from '../screens/events/EventsScreen';
-// import ProfileScreen from '../screens/profile/ProfileScreen';
 
 // Création d'un "placeholder" temporaire pour les tests
 const PlaceholderScreen = ({ route }) => (
@@ -87,7 +89,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen 
         name="Profile" 
-        component={PlaceholderScreen} 
+        component={ProfileNavigator} 
         options={{ title: 'Profil' }}
       />
     </Tab.Navigator>

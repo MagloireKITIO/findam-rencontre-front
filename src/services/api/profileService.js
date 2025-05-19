@@ -41,7 +41,7 @@ const profileService = {
    * @returns {Promise} - Résultat de la requête
    */
   updateLocation: (locationData) => {
-    return apiClient.post(`${PROFILE_ENDPOINT}/users/me/update_location/`, locationData);
+    return apiClient.post(`${PROFILE_ENDPOINT}/users/update_location/`, locationData);
   },
 
   /**
@@ -73,6 +73,31 @@ const profileService = {
    */
   setPrimaryPhoto: (photoId) => {
     return apiClient.post(`${PROFILE_ENDPOINT}/photos/${photoId}/set_primary/`);
+  },
+  
+  /**
+   * Change le mot de passe de l'utilisateur
+   * @param {Object} passwordData - Données de changement de mot de passe
+   * @returns {Promise} - Résultat de la requête
+   */
+  changePassword: (passwordData) => {
+    return apiClient.post(`${PROFILE_ENDPOINT}/change_password/`, passwordData);
+  },
+  
+  /**
+   * Supprime le compte de l'utilisateur
+   * @returns {Promise} - Résultat de la requête
+   */
+  deleteAccount: () => {
+    return apiClient.delete(`${PROFILE_ENDPOINT}/delete_account/`);
+  },
+  
+  /**
+   * Vérifie le statut de vérification du téléphone de l'utilisateur
+   * @returns {Promise} - Résultat de la requête
+   */
+  getVerificationStatus: () => {
+    return apiClient.get(`${PROFILE_ENDPOINT}/verification-status/`);
   }
 };
 
