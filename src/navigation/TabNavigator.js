@@ -1,7 +1,7 @@
 // src/navigation/TabNavigator.js
 
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
@@ -9,18 +9,16 @@ import { colors } from '../constants/colors';
 // Import des navigateurs et écrans
 import ProfileNavigator from './ProfileNavigator';
 
-// Écrans principaux (ils seront créés plus tard)
-// À remplacer au fur et à mesure par les vrais écrans:
-// import DiscoveryScreen from '../screens/discovery/DiscoveryScreen';
-// import NearbyScreen from '../screens/discovery/NearbyScreen';
-// import MatchesScreen from '../screens/discovery/MatchesScreen';
-// import MessagesScreen from '../screens/messaging/MessagesScreen';
-// import EventsScreen from '../screens/events/EventsScreen';
+// Import des écrans de découverte
+import DiscoveryScreen from '../screens/discovery/DiscoveryScreen';
+import NearbyUsersScreen from '../screens/discovery/NearbyUsersScreen';
+import MatchesScreen from '../screens/discovery/MatchesScreen';
 
-// Création d'un "placeholder" temporaire pour les tests
+// Placeholder temporaire pour les écrans à implémenter plus tard
 const PlaceholderScreen = ({ route }) => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>Écran {route.name}</Text>
+  <View style={styles.placeholderContainer}>
+    <Text style={styles.placeholderTitle}>Écran {route.name}</Text>
+    <Text style={styles.placeholderText}>Cet écran sera implémenté dans une phase ultérieure</Text>
   </View>
 );
 
@@ -28,6 +26,34 @@ const PlaceholderScreen = ({ route }) => (
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
+  // État pour gérer les badges de notification (sera implémenté plus tard)
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  // Charger le nombre de messages non lus (sera implémenté plus tard)
+  useEffect(() => {
+    const loadUnreadCounts = async () => {
+      try {
+        // Ce code sera implémenté lors de la phase messagerie et notifications
+        // const messageResponse = await apiServices.messaging.getUnreadCount();
+        // setUnreadMessages(messageResponse.data.count || 0);
+
+        // const notificationResponse = await apiServices.notifications.getNotificationCount();
+        // setUnreadNotifications(notificationResponse.data.count || 0);
+      } catch (error) {
+        console.error('Erreur lors du chargement des notifications non lues:', error);
+      }
+    };
+
+    // Appeler la fonction
+    loadUnreadCounts();
+
+    // Mettre en place un intervalle pour rafraîchir périodiquement
+    const interval = setInterval(loadUnreadCounts, 60000); // Toutes les minutes
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -64,23 +90,26 @@ const TabNavigator = () => {
     >
       <Tab.Screen 
         name="Discovery" 
-        component={PlaceholderScreen} 
+        component={DiscoveryScreen} 
         options={{ title: 'Découvrir' }}
       />
       <Tab.Screen 
         name="Nearby" 
-        component={PlaceholderScreen} 
+        component={NearbyUsersScreen} 
         options={{ title: 'À proximité' }}
       />
       <Tab.Screen 
         name="Matches" 
-        component={PlaceholderScreen} 
+        component={MatchesScreen} 
         options={{ title: 'Matchs' }}
       />
       <Tab.Screen 
         name="Messages" 
         component={PlaceholderScreen} 
-        options={{ title: 'Messages' }}
+        options={{ 
+          title: 'Messages',
+          tabBarBadge: unreadMessages > 0 ? unreadMessages : null
+        }}
       />
       <Tab.Screen 
         name="Events" 
@@ -95,5 +124,26 @@ const TabNavigator = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: colors.background,
+  },
+  placeholderTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 10,
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: colors.textLight,
+    textAlign: 'center',
+  },
+});
 
 export default TabNavigator;

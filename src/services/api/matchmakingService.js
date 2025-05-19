@@ -40,7 +40,7 @@ const matchmakingService = {
    * @returns {Promise} - Résultat de la requête
    */
   updateUserPreferences: (preferences) => {
-    return apiClient.put(`${MATCHMAKING_ENDPOINT}/preferences/`, preferences);
+    return apiClient.patch(`${MATCHMAKING_ENDPOINT}/preferences/`, preferences);
   },
 
   /**
@@ -88,6 +88,20 @@ const matchmakingService = {
   },
 
   /**
+   * Récupère les likes reçus ou donnés
+   * @param {string} type - Type de likes ('received' ou 'given', par défaut 'received')
+   * @returns {Promise} - Résultat de la requête
+   */
+  getLikes: (type = 'received') => {
+    // Correction: Endpoint adapté à la structure de l'API
+    return apiClient.get(`${MATCHMAKING_ENDPOINT}/likes/`, { 
+      params: { type: type } 
+    });
+    // Alternative si l'API a un endpoint spécifique pour les likes reçus
+    // return apiClient.get(`${MATCHMAKING_ENDPOINT}/likes/${type}/`);
+  },
+
+  /**
    * Bloque un utilisateur
    * @param {Object} blockData - Données du blocage (blocked, reason)
    * @returns {Promise} - Résultat de la requête
@@ -102,8 +116,7 @@ const matchmakingService = {
    * @returns {Promise} - Résultat de la requête
    */
   reportUser: (reportData) => {
-    return apiClient
-      .post(`${MATCHMAKING_ENDPOINT}/reports/`, reportData);
+    return apiClient.post(`${MATCHMAKING_ENDPOINT}/reports/`, reportData);
   },
 
   /**

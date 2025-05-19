@@ -20,6 +20,7 @@ import Input from '../../components/common/Input';
 import SelectInput from '../../components/common/SelectInput';
 import DateInput from '../../components/common/DateInput';
 import apiServices from '../../services/api';
+import ErrorDisplay from '../../components/common/ErrorDisplay';
 
 const EditProfileScreen = () => {
   const navigation = useNavigation();
@@ -27,10 +28,11 @@ const EditProfileScreen = () => {
   
   // États pour les informations du profil
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({}); // Ajouter un état pour les erreurs
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
-    date_of_birth: user?.date_of_birth || null,
+    date_of_birth: user?.date_of_birth ? new Date(user.date_of_birth) : null, // S'assurer que c'est un objet Date
     gender: user?.gender || '',
     seeking: user?.seeking || '',
     bio: user?.bio || '',
@@ -112,6 +114,7 @@ const EditProfileScreen = () => {
     }
     
     setLoading(true);
+    setValidationErrors({}); // Réinitialiser les erreurs
     
     try {
       // Modifier les données pour l'API si nécessaire
@@ -123,6 +126,8 @@ const EditProfileScreen = () => {
         }
       };
       
+      console.log('Données à envoyer:', JSON.stringify(dataToSubmit, null, 2));
+      
       // Appeler l'API pour mettre à jour le profil
       const response = await apiServices.profile.updateProfile(dataToSubmit);
       
@@ -133,7 +138,14 @@ const EditProfileScreen = () => {
       navigation.goBack();
     } catch (error) {
       console.error('Erreur lors de la mise à jour du profil:', error);
-      Alert.alert('Erreur', 'Impossible de mettre à jour votre profil. Veuillez réessayer.');
+      
+      // Afficher les erreurs de validation
+      if (error.response && error.response.data) {
+        console.error('Détails de l\'erreur:', error.response.data);
+        setValidationErrors(error.response.data);
+      } else {
+        Alert.alert('Erreur', 'Impossible de mettre à jour votre profil. Veuillez réessayer.');
+      }
     } finally {
       setLoading(false);
     }
@@ -156,6 +168,11 @@ const EditProfileScreen = () => {
           <Text style={styles.headerTitle}>Modifier mon profil</Text>
           <View style={styles.emptySpace} />
         </View>
+        
+        {/* Afficher les erreurs de validation */}
+        {Object.keys(validationErrors).length > 0 && (
+          <ErrorDisplay errors={validationErrors} />
+        )}
         
         {/* Formulaire */}
         <View style={styles.form}>

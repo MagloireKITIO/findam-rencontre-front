@@ -23,7 +23,26 @@ const profileService = {
    * @returns {Promise} - Résultat de la requête
    */
   updateProfile: (profileData) => {
-    return apiClient.put(`${PROFILE_ENDPOINT}/users/me/`, profileData);
+    // Créer une copie des données pour ne pas modifier l'original
+    const formattedData = { ...profileData };
+    
+    // Formater la date de naissance si c'est un objet Date
+    if (formattedData.date_of_birth instanceof Date) {
+      formattedData.date_of_birth = formattedData.date_of_birth.toISOString().split('T')[0];
+    }
+    
+    // Nettoyer les valeurs booléennes potentiellement problématiques
+    if (formattedData.profile) {
+      // Convertir explicitement has_children en vrai booléen si défini
+      if (formattedData.profile.has_children !== null && formattedData.profile.has_children !== undefined) {
+        formattedData.profile.has_children = Boolean(formattedData.profile.has_children);
+      }
+    }
+    
+    console.log('Données formatées pour mise à jour:', formattedData);
+    
+    // Utiliser PATCH au lieu de PUT pour mise à jour partielle
+    return apiClient.patch(`${PROFILE_ENDPOINT}/users/me/`, formattedData);
   },
 
   /**
