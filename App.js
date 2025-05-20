@@ -1,3 +1,4 @@
+
 // App.js
 
 import React from 'react';
@@ -7,6 +8,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { theme } from './src/constants/theme';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { WebSocketProvider } from './src/contexts/WebSocketContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 export default function App() {
@@ -14,10 +16,12 @@ export default function App() {
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
         <AuthProvider>
-          <NavigationContainer>
-            <StatusBar style="auto" />
-            <AppNavigator />
-          </NavigationContainer>
+          <WebSocketProvider>
+            <NavigationContainer>
+              <StatusBar style="auto" />
+              <AppNavigator />
+            </NavigationContainer>
+          </WebSocketProvider>
         </AuthProvider>
       </PaperProvider>
     </SafeAreaProvider>

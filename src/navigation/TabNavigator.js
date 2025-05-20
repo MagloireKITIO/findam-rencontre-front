@@ -8,6 +8,7 @@ import { colors } from '../constants/colors';
 
 // Import des navigateurs et écrans
 import ProfileNavigator from './ProfileNavigator';
+import MessagingNavigator from './MessagingNavigator';
 
 // Import des écrans de découverte
 import DiscoveryScreen from '../screens/discovery/DiscoveryScreen';
@@ -105,7 +106,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen 
         name="Messages" 
-        component={PlaceholderScreen} 
+        component={MessagingNavigator} 
         options={{ 
           title: 'Messages',
           tabBarBadge: unreadMessages > 0 ? unreadMessages : null
