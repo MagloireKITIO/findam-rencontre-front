@@ -27,18 +27,22 @@ class WebSocketService {
    */
   connect(path, token) {
     if (this.isConnecting || this.connected) {
+      console.log("WebSocket: déjà connecté ou en cours de connexion");
       return Promise.resolve();
     }
 
     this.isConnecting = true;
+    console.log(`WebSocket: tentative de connexion à ${path} avec token`);
     
     return new Promise((resolve, reject) => {
       try {
         const wsUrl = `${config.WEBSOCKET_URL}${path}?token=${token}`;
+        console.log(`WebSocket: URL de connexion: ${wsUrl.replace(/token=([^&]+)/, 'token=***')}`);
+        
         this.socket = new WebSocket(wsUrl);
         
         this.socket.onopen = () => {
-          console.log('WebSocket connected');
+          console.log('WebSocket: connexion établie');
           this.connected = true;
           this.isConnecting = false;
           this.reconnectAttempts = 0;
@@ -49,21 +53,22 @@ class WebSocketService {
         this.socket.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
+            console.log('WebSocket: message reçu', data.type || 'type inconnu');
             this.notifyMessageHandlers(data);
           } catch (e) {
-            console.error('Error parsing WebSocket message:', e);
+            console.error('WebSocket: erreur lors du parsing du message:', e);
           }
         };
         
         this.socket.onerror = (error) => {
-          console.error('WebSocket error:', error);
+          console.error('WebSocket: erreur de connexion:', error);
           this.notifyErrorHandlers(error);
           this.isConnecting = false;
           reject(error);
         };
         
         this.socket.onclose = (event) => {
-          console.log('WebSocket closed:', event.code, event.reason);
+          console.log(`WebSocket: connexion fermée - code: ${event.code}, raison: ${event.reason}`);
           this.connected = false;
           this.isConnecting = false;
           this.notifyConnectionHandlers(false);
@@ -73,7 +78,7 @@ class WebSocketService {
           this.attemptReconnect(path, token);
         };
       } catch (error) {
-        console.error('Error creating WebSocket:', error);
+        console.error('WebSocket: erreur lors de la création de la connexion:', error);
         this.isConnecting = false;
         reject(error);
       }
@@ -90,14 +95,16 @@ class WebSocketService {
       this.reconnectAttempts++;
       
       const delay = Math.min(30000, Math.pow(2, this.reconnectAttempts) * 1000);
+      console.log(`WebSocket: nouvelle tentative dans ${delay/1000}s (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
       
       this.reconnectTimeout = setTimeout(() => {
-        console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-        this.connect(path, token).catch(() => {
-          // La reconnexion a échoué, mais la fonction attemptReconnect sera rappelée
-          // lors de l'événement onclose
+        console.log(`WebSocket: tentative de reconnexion (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+        this.connect(path, token).catch((error) => {
+          console.error('WebSocket: échec de la reconnexion:', error);
         });
       }, delay);
+    } else {
+      console.log(`WebSocket: nombre maximum de tentatives atteint (${this.maxReconnectAttempts})`);
     }
   }
   
@@ -105,14 +112,18 @@ class WebSocketService {
    * Déconnecte du serveur WebSocket
    */
   disconnect() {
+    console.log('WebSocket: demande de déconnexion');
+    
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
+      console.log('WebSocket: timer de reconnexion annulé');
     }
     
     if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
       this.socket.close();
       this.socket = null;
+      console.log('WebSocket: socket fermé');
     }
     
     this.connected = false;
@@ -127,9 +138,12 @@ class WebSocketService {
    */
   sendMessage(data) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify(data));
+      const message = JSON.stringify(data);
+      console.log(`WebSocket: envoi de message - action: ${data.action}, conversation: ${data.conversation_id || 'N/A'}`);
+      this.socket.send(message);
       return true;
     }
+    console.warn('WebSocket: tentative d\'envoi sans connexion active');
     return false;
   }
   
@@ -139,6 +153,7 @@ class WebSocketService {
    */
   addMessageHandler(handler) {
     this.messageHandlers.push(handler);
+    console.log(`WebSocket: gestionnaire de messages ajouté (total: ${this.messageHandlers.length})`);
   }
   
   /**
@@ -146,7 +161,9 @@ class WebSocketService {
    * @param {function} handler - Fonction de callback à supprimer
    */
   removeMessageHandler(handler) {
+    const initialCount = this.messageHandlers.length;
     this.messageHandlers = this.messageHandlers.filter(h => h !== handler);
+    console.log(`WebSocket: gestionnaire de messages supprimé (${initialCount} -> ${this.messageHandlers.length})`);
   }
   
   /**
@@ -155,6 +172,7 @@ class WebSocketService {
    */
   addConnectionHandler(handler) {
     this.connectionHandlers.push(handler);
+    console.log(`WebSocket: gestionnaire de connexion ajouté (total: ${this.connectionHandlers.length})`);
   }
   
   /**
@@ -162,7 +180,9 @@ class WebSocketService {
    * @param {function} handler - Fonction de callback à supprimer
    */
   removeConnectionHandler(handler) {
+    const initialCount = this.connectionHandlers.length;
     this.connectionHandlers = this.connectionHandlers.filter(h => h !== handler);
+    console.log(`WebSocket: gestionnaire de connexion supprimé (${initialCount} -> ${this.connectionHandlers.length})`);
   }
   
   /**
@@ -206,7 +226,7 @@ class WebSocketService {
       try {
         handler(data);
       } catch (e) {
-        console.error('Error in message handler:', e);
+        console.error('WebSocket: erreur dans le gestionnaire de messages:', e);
       }
     });
   }
@@ -220,7 +240,7 @@ class WebSocketService {
       try {
         handler(connected);
       } catch (e) {
-        console.error('Error in connection handler:', e);
+        console.error('WebSocket: erreur dans le gestionnaire de connexion:', e);
       }
     });
   }
@@ -234,7 +254,7 @@ class WebSocketService {
       try {
         handler(error);
       } catch (e) {
-        console.error('Error in error handler:', e);
+        console.error('WebSocket: erreur dans le gestionnaire d\'erreurs:', e);
       }
     });
   }
@@ -248,7 +268,7 @@ class WebSocketService {
       try {
         handler(event);
       } catch (e) {
-        console.error('Error in close handler:', e);
+        console.error('WebSocket: erreur dans le gestionnaire de fermeture:', e);
       }
     });
   }
@@ -259,6 +279,22 @@ class WebSocketService {
    */
   isConnected() {
     return this.connected;
+  }
+  
+  /**
+   * Obtient l'état actuel du socket
+   * @returns {string} - Description de l'état du socket
+   */
+  getSocketState() {
+    if (!this.socket) return 'DISCONNECTED';
+    
+    switch(this.socket.readyState) {
+      case WebSocket.CONNECTING: return 'CONNECTING';
+      case WebSocket.OPEN: return 'OPEN';
+      case WebSocket.CLOSING: return 'CLOSING';
+      case WebSocket.CLOSED: return 'CLOSED';
+      default: return 'UNKNOWN';
+    }
   }
 }
 

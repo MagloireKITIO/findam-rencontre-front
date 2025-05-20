@@ -26,7 +26,12 @@ const ConversationScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { conversationId, otherUser } = route.params;
-  const { connectWebSocket, sendWebSocketMessage, webSocketMessages, connectionStatus } = useWebSocket();
+  const { 
+    connectWebSocket, 
+    sendWebSocketMessage, 
+    webSocketMessages, 
+    connectionStatus 
+  } = useWebSocket();
   
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,13 +45,16 @@ const ConversationScreen = () => {
   
   // Initialiser la connexion WebSocket et charger les messages au montage
   useEffect(() => {
+    console.log('ConversationScreen: initialisation pour conversation', conversationId);
     loadMessages();
     
-    // Connecter au WebSocket
-    connectWebSocket();
-    
-    // Rejoindre la conversation via WebSocket
-    if (connectionStatus === 'connected') {
+    // Se connecter au WebSocket si pas déjà connecté
+    if (connectionStatus !== 'connected') {
+      console.log('ConversationScreen: connexion WebSocket requise');
+      connectWebSocket();
+    } else {
+      console.log('ConversationScreen: WebSocket déjà connecté');
+      // Rejoindre la conversation immédiatement si déjà connecté
       joinConversation();
     }
     
@@ -96,8 +104,11 @@ const ConversationScreen = () => {
     
     // Nettoyer
     return () => {
+      console.log('ConversationScreen: nettoyage');
+      
       // Quitter la conversation via WebSocket
       if (connectionStatus === 'connected') {
+        console.log('ConversationScreen: quitter la conversation au démontage');
         leaveConversation();
       }
       
@@ -106,27 +117,61 @@ const ConversationScreen = () => {
         clearTimeout(typingTimeout);
       }
     };
-  }, [conversationId, connectionStatus]);
+  }, [conversationId]);
   
-  // Surveiller les messages WebSocket
+  // Observer les changements d'état de connexion WebSocket
   useEffect(() => {
-    if (webSocketMessages && webSocketMessages.length > 0) {
+    if (connectionStatus === 'connected') {
+      console.log('ConversationScreen: WebSocket connecté, rejoindre la conversation');
+      joinConversation();
+    }
+  }, [connectionStatus]);
+  
+  // Observer les messages WebSocket
+  useEffect(() => {
+    if (webSocketMessages.length > 0) {
       const lastMessage = webSocketMessages[webSocketMessages.length - 1];
+      console.log('ConversationScreen: nouveau message WebSocket reçu:', lastMessage.type);
       
-      if (lastMessage.conversation_id === conversationId) {
+      // Traiter uniquement si le message concerne cette conversation
+      if (lastMessage.conversation_id == conversationId || 
+          (lastMessage.message && lastMessage.message.conversation_id == conversationId)) {
+        
         if (lastMessage.type === 'new_message') {
-          // Ajouter le nouveau message
-          setMessages(prevMessages => [lastMessage.message, ...prevMessages]);
+          console.log('ConversationScreen: nouveau message pour cette conversation');
+          // Formater le message pour l'affichage
+          const messageForDisplay = {
+            id: lastMessage.message.id,
+            sender: lastMessage.message.sender_id,
+            sender_details: { id: lastMessage.message.sender_id, username: lastMessage.message.sender_username },
+            content: lastMessage.message.content,
+            message_type: lastMessage.message.message_type,
+            is_read: lastMessage.message.is_read,
+            created_at: lastMessage.message.created_at,
+            is_sender: lastMessage.message.is_sender
+          };
+          
+          // Ajouter uniquement si c'est un nouveau message
+          setMessages(prevMessages => {
+            // Vérifier si le message existe déjà
+            const exists = prevMessages.some(msg => msg.id === messageForDisplay.id);
+            if (!exists) {
+              return [messageForDisplay, ...prevMessages];
+            }
+            return prevMessages;
+          });
         } else if (lastMessage.type === 'message_read') {
+          console.log('ConversationScreen: message marqué comme lu');
           // Mettre à jour le statut lu
           setMessages(prevMessages => 
             prevMessages.map(msg => 
-              msg.id === lastMessage.message_id 
+              msg.id == lastMessage.message_id 
                 ? {...msg, is_read: true} 
                 : msg
             )
           );
         } else if (lastMessage.type === 'user_typing') {
+          console.log('ConversationScreen: utilisateur en train d\'écrire');
           // Montrer l'indicateur de frappe
           setIsTyping(true);
           
@@ -134,6 +179,15 @@ const ConversationScreen = () => {
           setTimeout(() => {
             setIsTyping(false);
           }, 3000);
+        } else if (lastMessage.type === 'conversation_joined') {
+          console.log('ConversationScreen: conversation rejointe');
+          // Pourrait être utilisé pour des indicateurs visuels
+        } else if (lastMessage.type === 'conversation_left') {
+          console.log('ConversationScreen: conversation quittée');
+          // Pourrait être utilisé pour des indicateurs visuels
+        } else if (lastMessage.type === 'error') {
+          console.error('ConversationScreen: erreur WebSocket:', lastMessage.message);
+          // Pourrait être utilisé pour afficher une notification d'erreur
         }
       }
     }
@@ -143,14 +197,17 @@ const ConversationScreen = () => {
   const loadMessages = async () => {
     setLoading(true);
     try {
+      console.log('ConversationScreen: chargement des messages pour conversation', conversationId);
       const response = await apiServices.messaging.getMessages(conversationId);
       if (response.data && response.data.results) {
+        console.log(`ConversationScreen: ${response.data.results.length} messages chargés`);
         setMessages(response.data.results);
       } else {
+        console.log('ConversationScreen: aucun message trouvé');
         setMessages([]);
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des messages:', error);
+      console.error('ConversationScreen: erreur lors du chargement des messages:', error);
       Alert.alert('Erreur', 'Impossible de charger les messages. Veuillez réessayer.');
     } finally {
       setLoading(false);
@@ -159,6 +216,7 @@ const ConversationScreen = () => {
   
   // Rejoindre la conversation via WebSocket
   const joinConversation = () => {
+    console.log('ConversationScreen: rejoindre conversation:', conversationId);
     sendWebSocketMessage({
       action: 'join_conversation',
       conversation_id: conversationId
@@ -167,6 +225,7 @@ const ConversationScreen = () => {
   
   // Quitter la conversation via WebSocket
   const leaveConversation = () => {
+    console.log('ConversationScreen: quitter conversation:', conversationId);
     sendWebSocketMessage({
       action: 'leave_conversation',
       conversation_id: conversationId
@@ -185,39 +244,58 @@ const ConversationScreen = () => {
     setSending(true);
     
     try {
-      // Envoyer via l'API REST
-      const response = await apiServices.messaging.sendMessage({
-        conversation: conversationId,
-        content: trimmedMessage,
-        message_type: 'TEXT'
-      });
+      console.log('ConversationScreen: envoi de message:', trimmedMessage.substring(0, 20) + '...');
       
-      // Envoyer via WebSocket
-      sendWebSocketMessage({
+      // Créer un message temporaire avec ID local pour l'UI
+      const tempId = 'temp_' + Date.now();
+      const tempMessage = {
+        id: tempId,
+        content: trimmedMessage,
+        message_type: 'TEXT',
+        is_read: false,
+        created_at: new Date().toISOString(),
+        is_sender: true,
+        temp: true // Marquer comme temporaire
+      };
+      
+      // Ajouter à l'UI immédiatement pour une réactivité maximale
+      setMessages(prevMessages => [tempMessage, ...prevMessages]);
+      
+      // Envoyer via WebSocket en premier pour plus de réactivité
+      const messageSent = sendWebSocketMessage({
         action: 'send_message',
         conversation_id: conversationId,
         content: trimmedMessage,
         message_type: 'TEXT'
       });
       
-      // Si l'API ne retourne pas le message envoyé, créer un nouveau message local
-      if (!response.data) {
-        const newMessage = {
-          id: Date.now().toString(), // ID temporaire
-          conversation_id: conversationId,
-          sender_id: 'me', // ID temporaire
-          content: trimmedMessage,
-          message_type: 'TEXT',
-          is_read: false,
-          created_at: new Date().toISOString(),
-          is_sender: true
-        };
+      console.log('ConversationScreen: message envoyé via WebSocket:', messageSent);
+      
+      // Puis via l'API REST
+      const response = await apiServices.messaging.sendMessage({
+        conversation: conversationId,
+        content: trimmedMessage,
+        message_type: 'TEXT'
+      });
+      
+      if (response.data) {
+        console.log('ConversationScreen: message envoyé via API:', response.data.id);
         
-        setMessages(prevMessages => [newMessage, ...prevMessages]);
+        // Remplacer le message temporaire par le vrai message de l'API
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg.id === tempId 
+              ? {...response.data, is_sender: true} 
+              : msg
+          )
+        );
       }
     } catch (error) {
-      console.error('Erreur lors de l\'envoi du message:', error);
+      console.error('ConversationScreen: erreur lors de l\'envoi du message:', error);
       Alert.alert('Erreur', 'Impossible d\'envoyer le message. Veuillez réessayer.');
+      
+      // Supprimer le message temporaire en cas d'erreur
+      setMessages(prevMessages => prevMessages.filter(msg => !msg.temp));
     } finally {
       setSending(false);
     }
@@ -227,6 +305,7 @@ const ConversationScreen = () => {
   const markMessageAsRead = async (messageId) => {
     try {
       await apiServices.messaging.markMessageAsRead(messageId);
+      console.log('ConversationScreen: message marqué comme lu via API:', messageId);
       
       // Envoyer également via WebSocket
       sendWebSocketMessage({
@@ -234,7 +313,7 @@ const ConversationScreen = () => {
         message_id: messageId
       });
     } catch (error) {
-      console.error('Erreur lors du marquage du message comme lu:', error);
+      console.error('ConversationScreen: erreur lors du marquage du message comme lu:', error);
     }
   };
   
@@ -304,10 +383,11 @@ const ConversationScreen = () => {
   // Supprimer la conversation
   const deleteConversation = async () => {
     try {
+      console.log('ConversationScreen: suppression de la conversation:', conversationId);
       await apiServices.messaging.deactivateConversation(conversationId);
       navigation.goBack();
     } catch (error) {
-      console.error('Erreur lors de la suppression de la conversation:', error);
+      console.error('ConversationScreen: erreur lors de la suppression de la conversation:', error);
       Alert.alert('Erreur', 'Impossible de supprimer cette conversation. Veuillez réessayer.');
     }
   };
@@ -392,6 +472,18 @@ const ConversationScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : null}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
+      {/* Indicateur de statut WebSocket */}
+      {connectionStatus !== 'connected' && (
+        <View style={[
+          styles.connectionIndicator,
+          connectionStatus === 'connecting' ? styles.connectingIndicator : styles.disconnectedIndicator
+        ]}>
+          <Text style={styles.connectionText}>
+            {connectionStatus === 'connecting' ? 'Connexion en cours...' : 'Déconnecté'}
+          </Text>
+        </View>
+      )}
+      
       {/* Indicateur de frappe */}
       {isTyping && (
         <View style={styles.typingIndicator}>
@@ -438,10 +530,10 @@ const ConversationScreen = () => {
         <TouchableOpacity
           style={[
             styles.sendButton,
-            (!messageText.trim() || sending) && styles.sendButtonDisabled
+            (!messageText.trim() || sending || connectionStatus !== 'connected') && styles.sendButtonDisabled
           ]}
           onPress={sendMessage}
-          disabled={!messageText.trim() || sending}
+          disabled={!messageText.trim() || sending || connectionStatus !== 'connected'}
         >
           {sending ? (
             <ActivityIndicator size="small" color={colors.textInverted} />
@@ -501,6 +593,20 @@ const styles = StyleSheet.create({
   offlineStatus: {
     fontSize: 12,
     color: colors.textLight,
+  },
+  connectionIndicator: {
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  connectingIndicator: {
+    backgroundColor: colors.warning + '40',
+  },
+  disconnectedIndicator: {
+    backgroundColor: colors.error + '40',
+  },
+  connectionText: {
+    fontSize: 12,
+    color: colors.text,
   },
   messagesContainer: {
     padding: 16,
