@@ -26,22 +26,23 @@ const matchmakingService = {
     return apiClient.get(`${MATCHMAKING_ENDPOINT}/nearby/`, { params });
   },
 
-  /**
-   * Récupère les préférences de matchmaking de l'utilisateur
-   * @returns {Promise} - Résultat de la requête
-   */
-  getUserPreferences: () => {
-    return apiClient.get(`${MATCHMAKING_ENDPOINT}/preferences/`);
-  },
+/**
+ * Récupère les préférences de matchmaking de l'utilisateur
+ * @returns {Promise} - Résultat de la requête
+ */
+getUserPreferences: () => {
+  return apiClient.get(`${MATCHMAKING_ENDPOINT}/preferences/current/`);
+},
 
-  /**
-   * Met à jour les préférences de matchmaking
-   * @param {Object} preferences - Nouvelles préférences
-   * @returns {Promise} - Résultat de la requête
-   */
-  updateUserPreferences: (preferences) => {
-    return apiClient.patch(`${MATCHMAKING_ENDPOINT}/preferences/`, preferences);
-  },
+/**
+ * Met à jour les préférences de matchmaking
+ * @param {Object} preferences - Nouvelles préférences
+ * @returns {Promise} - Résultat de la requête
+ */
+updateUserPreferences: (preferences) => {
+  // Utilise le nouvel endpoint personnalisé qui accepte PUT
+  return apiClient.put(`${MATCHMAKING_ENDPOINT}/preferences/update_preferences/`, preferences);
+},
 
   /**
    * Enregistre une action de swipe

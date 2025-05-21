@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import apiServices from '../../services/api';
 import EmptyState from '../../components/common/EmptyState';
+import FilterModal from '../../components/discovery/FilterModal';
 
 const MatchesScreen = () => {
   const navigation = useNavigation();
@@ -24,7 +25,7 @@ const MatchesScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('matches'); // 'matches' ou 'likes'
-
+const [showFilterModal, setShowFilterModal] = useState(false);
   // Réinitialiser l'écran lorsqu'il est de nouveau actif
   useFocusEffect(
     React.useCallback(() => {
@@ -307,73 +308,6 @@ const MatchesScreen = () => {
       </View>
     );
 
-    return (
-      <View style={styles.matchCard}>
-        <TouchableOpacity 
-          style={styles.matchPhotoContainer}
-          onPress={() => navigateToUserProfile(user.id)}
-        >
-          <Image 
-            source={{ uri: getProfilePhoto() }} 
-            style={styles.matchPhoto}
-            resizeMode="cover"
-          />
-          
-          {activeTab === 'matches' && (
-            <View style={styles.matchBadge}>
-              <Ionicons name="heart" size={12} color={colors.textInverted} />
-            </View>
-          )}
-        </TouchableOpacity>
-        
-        <View style={styles.matchInfo}>
-          <TouchableOpacity onPress={() => navigateToUserProfile(user.id)}>
-            <Text style={styles.matchName}>
-              {user.first_name || user.username}
-              {age && <Text style={styles.matchAge}>, {age}</Text>}
-              {user.is_verified && (
-                <Ionicons name="checkmark-circle" size={14} color={colors.primary} style={styles.verifiedIcon} />
-              )}
-            </Text>
-          </TouchableOpacity>
-          
-          {user.location && (
-            <Text style={styles.matchLocation}>
-              <Ionicons name="location-outline" size={12} color={colors.textLight} /> {user.location}
-            </Text>
-          )}
-          
-          <View style={styles.matchActions}>
-            {activeTab === 'matches' ? (
-              <>
-                <TouchableOpacity 
-                  style={[styles.matchButton, styles.messageButton]}
-                  onPress={() => navigateToConversation(item.id, user)}
-                >
-                  <Ionicons name="chatbubble-outline" size={16} color={colors.primary} />
-                  <Text style={styles.messageButtonText}>Message</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.unmatchButton}
-                  onPress={() => handleUnmatch(item.id)}
-                >
-                  <Ionicons name="close" size={18} color={colors.textLight} />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity 
-                style={[styles.matchButton, styles.likeButton]}
-                onPress={() => handleLike(item.id, user.id)}
-              >
-                <Ionicons name="heart-outline" size={16} color={colors.like} />
-                <Text style={styles.likeButtonText}>J'aime aussi</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      </View>
-    );
   };
 
   // Afficher un chargement
@@ -389,13 +323,26 @@ const MatchesScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      {/* En-tête */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {activeTab === 'matches' ? 'Mes Matches' : 'Likes reçus'}
-        </Text>
-      </View>
+  <View style={styles.container}>
+    {/* En-tête */}
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>
+        {activeTab === 'matches' ? 'Mes Matches' : 'Likes reçus'}
+      </Text>
+      <TouchableOpacity
+        style={styles.filterButton}
+        onPress={() => setShowFilterModal(true)}
+      >
+        <Ionicons name="options" size={22} color={colors.primary} />
+      </TouchableOpacity>
+    </View>
+    
+    {/* Modal de filtre */}
+    <FilterModal
+      visible={showFilterModal}
+      onClose={() => setShowFilterModal(false)}
+      onApplyFilters={loadData}
+    />
       
       {/* Onglets de navigation */}
       <View style={styles.tabs}>
@@ -477,16 +424,26 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 10,
-    alignItems: 'center',
+    paddingBottom: 20,
     backgroundColor: colors.card,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: colors.text,
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tabs: {
     flexDirection: 'row',

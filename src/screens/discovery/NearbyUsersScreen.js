@@ -18,6 +18,8 @@ import { colors } from '../../constants/colors';
 import apiServices from '../../services/api';
 import EmptyState from '../../components/common/EmptyState';
 import * as Location from 'expo-location';
+import FilterModal from '../../components/discovery/FilterModal';
+
 
 const NearbyUsersScreen = () => {
   const navigation = useNavigation();
@@ -26,6 +28,7 @@ const NearbyUsersScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   // Réinitialiser l'écran lorsqu'il est de nouveau actif
   useFocusEffect(
@@ -277,11 +280,24 @@ const NearbyUsersScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      {/* En-tête */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>À proximité</Text>
-      </View>
+  <View style={styles.container}>
+    {/* En-tête */}
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>À proximité</Text>
+      <TouchableOpacity
+        style={styles.filterButton}
+        onPress={() => setShowFilterModal(true)}
+      >
+        <Ionicons name="options" size={22} color={colors.primary} />
+      </TouchableOpacity>
+    </View>
+    
+    {/* Modal de filtre */}
+    <FilterModal
+      visible={showFilterModal}
+      onClose={() => setShowFilterModal(false)}
+      onApplyFilters={handleRefresh}
+    />
       
       {/* Liste des utilisateurs */}
       <FlatList
@@ -322,10 +338,12 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
-    alignItems: 'center',
     backgroundColor: colors.card,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -334,6 +352,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: colors.text,
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContainer: {
     padding: 16,

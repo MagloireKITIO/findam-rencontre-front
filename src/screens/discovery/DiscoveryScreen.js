@@ -20,6 +20,7 @@ import apiServices from '../../services/api';
 import EmptyState from '../../components/common/EmptyState';
 import Button from '../../components/common/Button';
 import ProfileCard from '../../components/discovery/ProfileCard';
+import FilterModal from '../../components/discovery/FilterModal';
 
 const { width, height } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 120;
@@ -30,6 +31,8 @@ const DiscoveryScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [noMoreProfiles, setNoMoreProfiles] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
 
   // Animations
   const position = useRef(new Animated.ValueXY()).current;
@@ -265,11 +268,24 @@ const DiscoveryScreen = () => {
   });
 
   return (
-    <View style={styles.container}>
-      {/* En-tête */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Découvrir</Text>
-      </View>
+  <View style={styles.container}>
+    {/* En-tête avec bouton de filtre */}
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>Découvrir</Text>
+      <TouchableOpacity
+        style={styles.filterButton}
+        onPress={() => setShowFilterModal(true)}
+      >
+        <Ionicons name="options" size={24} color={colors.primary} />
+      </TouchableOpacity>
+    </View>
+
+    {/* Modal de filtre */}
+    <FilterModal
+      visible={showFilterModal}
+      onClose={() => setShowFilterModal(false)}
+      onApplyFilters={loadProfiles}
+    />
 
       {/* Zone de cartes */}
       <View style={styles.cardContainer}>
@@ -365,15 +381,25 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
-    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: colors.text,
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardContainer: {
     flex: 1,

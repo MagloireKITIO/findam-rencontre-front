@@ -71,21 +71,37 @@ const EditPreferencesScreen = () => {
   
   // Enregistrer les préférences
   const savePreferences = async () => {
-    // Valider les données
-    if (!validateAgeRange()) return;
+  // Valider les données
+  if (!validateAgeRange()) return;
+  
+  setSaving(true);
+  try {
+    // Utiliser la méthode PUT au lieu de PATCH
+    await apiServices.matchmaking.updateUserPreferences(preferences);
+    Alert.alert('Succès', 'Vos préférences ont été mises à jour avec succès');
+    navigation.goBack();
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des préférences:', error);
     
-    setSaving(true);
-    try {
-      await apiServices.matchmaking.updateUserPreferences(preferences);
-      Alert.alert('Succès', 'Vos préférences ont été mises à jour avec succès');
-      navigation.goBack();
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour des préférences:', error);
+    // Afficher des messages d'erreur plus détaillés
+    if (error.response) {
+      console.error('Statut:', error.response.status);
+      console.error('Données:', error.response.data);
+      
+      if (error.response.data && typeof error.response.data === 'object') {
+        const errorMessages = Object.values(error.response.data).flat().join('\n');
+        Alert.alert('Erreur', `Impossible de mettre à jour vos préférences: ${errorMessages}`);
+      } else {
+        Alert.alert('Erreur', `Impossible de mettre à jour vos préférences. Code: ${error.response.status}`);
+      }
+    } else {
       Alert.alert('Erreur', 'Impossible de mettre à jour vos préférences. Veuillez réessayer.');
-    } finally {
-      setSaving(false);
     }
-  };
+  } finally {
+    setSaving(false);
+  }
+};
+
   
   if (loading) {
     return (
