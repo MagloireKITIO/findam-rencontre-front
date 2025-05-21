@@ -5,7 +5,7 @@
  */
 export const config = {
   // URL de base de l'API
-  API_URL: 'http://10.0.2.2:8000', // Utilise 10.0.2.2 pour accéder à localhost depuis un émulateur Android
+  API_URL: 'http://192.168.6.56:8000', // Utilise 10.0.2.2 pour accéder à localhost depuis un émulateur Android
   // API_URL: 'http://localhost:8000', // Pour iOS Simulator
   // API_URL: 'https://findam.cm', // Pour la production
 
@@ -24,7 +24,7 @@ export const config = {
   },
 
   // Configuration des WebSockets
-  WEBSOCKET_URL: 'ws://10.0.2.2:8000', // Pour émulateur Android
+  WEBSOCKET_URL: 'ws://192.168.6.56:8000', // Pour émulateur Android
   // WEBSOCKET_URL: 'ws://localhost:8000', // Pour iOS Simulator
   // WEBSOCKET_URL: 'wss://findam.cm', // Pour la production
   

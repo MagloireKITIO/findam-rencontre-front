@@ -1,4 +1,4 @@
-// src/screens/profile/SettingsScreen.js
+// src/screens/profile/SettingsScreen.js - Mise à jour pour Premium
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -24,20 +24,38 @@ const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailsEnabled, setEmailsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
+  const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   
-  // Charger les préférences de notification
+  // Charger les préférences et le statut d'abonnement
   useEffect(() => {
     loadNotificationPreferences();
+    checkSubscriptionStatus();
   }, []);
   
   // Charger les préférences de notification
   const loadNotificationPreferences = async () => {
     try {
       const response = await apiServices.notifications.getNotificationPreferences();
-      setNotificationsEnabled(response.data.push_enabled);
-      setEmailsEnabled(response.data.email_enabled);
+      setNotificationsEnabled(response.data.receive_push);
+      setEmailsEnabled(response.data.receive_email);
     } catch (error) {
       console.error('Erreur lors du chargement des préférences de notification:', error);
+    }
+  };
+
+  // Vérifier le statut d'abonnement
+  const checkSubscriptionStatus = async () => {
+    try {
+      const response = await apiServices.subscriptions.getSubscriptionStatus();
+      if (response.data) {
+        setIsPremium(response.data.is_premium);
+        if (response.data.is_premium) {
+          setSubscriptionInfo(response.data.subscription);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification du statut d\'abonnement:', error);
     }
   };
   
@@ -47,10 +65,10 @@ const SettingsScreen = () => {
       let preferences = {};
       
       if (type === 'push') {
-        preferences.push_enabled = value;
+        preferences.receive_push = value;
         setNotificationsEnabled(value);
       } else if (type === 'email') {
-        preferences.email_enabled = value;
+        preferences.receive_email = value;
         setEmailsEnabled(value);
       }
       
@@ -144,14 +162,22 @@ const SettingsScreen = () => {
       ]
     );
   };
+
+  // Naviguer vers l'historique des paiements
+  const goToPaymentHistory = () => {
+  // Navigation correcte
+  navigation.navigate('Premium', { 
+    screen: 'PaymentHistory' 
+  });
+};
   
   return (
     <View style={styles.container}>
       {/* En-tête */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          style={styles.settingItem}
+          onPress={() => navigation.navigate('Premium')}
         >
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -257,19 +283,52 @@ const SettingsScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Premium</Text>
           
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => navigation.navigate('Premium')}
-          >
-            <View style={styles.settingContent}>
-              <Ionicons name="star" size={22} color={colors.secondary} style={styles.settingIcon} />
-              <View>
-                <Text style={styles.settingText}>Passez à Premium</Text>
-                <Text style={styles.settingDescription}>Débloquez toutes les fonctionnalités</Text>
+          {isPremium ? (
+            <>
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={() => navigation.navigate('Premium')}
+              >
+                <View style={styles.settingContent}>
+                  <Ionicons name="star" size={22} color={colors.secondary} style={styles.settingIcon} />
+                  <View>
+                    <Text style={styles.settingText}>Mon abonnement Premium</Text>
+                    <Text style={styles.settingDescription}>
+                      {subscriptionInfo ? 
+                        `Actif jusqu'au ${new Date(subscriptionInfo.end_date).toLocaleDateString()}` : 
+                        'Abonnement actif'}
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={22} color={colors.textLight} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.settingItem}
+                onPress={goToPaymentHistory}
+              >
+                <View style={styles.settingContent}>
+                  <Ionicons name="receipt-outline" size={22} color={colors.text} style={styles.settingIcon} />
+                  <Text style={styles.settingText}>Historique des paiements</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={22} color={colors.textLight} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity 
+              style={styles.settingItem}
+              onPress={() => navigation.navigate('Premium')}
+            >
+              <View style={styles.settingContent}>
+                <Ionicons name="star" size={22} color={colors.secondary} style={styles.settingIcon} />
+                <View>
+                  <Text style={styles.settingText}>Passez à Premium</Text>
+                  <Text style={styles.settingDescription}>Débloquez toutes les fonctionnalités</Text>
+                </View>
               </View>
-            </View>
-            <Ionicons name="chevron-forward" size={22} color={colors.textLight} />
-          </TouchableOpacity>
+              <Ionicons name="chevron-forward" size={22} color={colors.textLight} />
+            </TouchableOpacity>
+          )}
         </View>
         
         {/* Section support */}

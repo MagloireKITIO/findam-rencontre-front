@@ -1,4 +1,4 @@
-// src/navigation/TabNavigator.js
+// src/navigation/TabNavigator.js (modification)
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
@@ -9,6 +9,7 @@ import { colors } from '../constants/colors';
 // Import des navigateurs et écrans
 import ProfileNavigator from './ProfileNavigator';
 import MessagingNavigator from './MessagingNavigator';
+import SubscriptionNavigator from './SubscriptionNavigator';
 
 // Import des écrans de découverte
 import DiscoveryScreen from '../screens/discovery/DiscoveryScreen';
@@ -72,6 +73,8 @@ const TabNavigator = () => {
             iconName = focused ? 'chatbubble' : 'chatbubble-outline';
           } else if (route.name === 'Events') {
             iconName = focused ? 'calendar' : 'calendar-outline';
+          } else if (route.name === 'Premium') {
+            iconName = focused ? 'star' : 'star-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -116,6 +119,11 @@ const TabNavigator = () => {
         name="Events" 
         component={PlaceholderScreen} 
         options={{ title: 'Événements' }}
+      />
+      <Tab.Screen 
+        name="Premium" 
+        component={SubscriptionNavigator} 
+        options={{ title: 'Premium' }}
       />
       <Tab.Screen 
         name="Profile" 

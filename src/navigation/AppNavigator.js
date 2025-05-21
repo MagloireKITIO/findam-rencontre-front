@@ -7,6 +7,7 @@ import { colors } from '../constants/colors';
 import { useAuth } from '../contexts/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import TabNavigator from './TabNavigator';
+import SubscriptionNavigator from './SubscriptionNavigator';
 
 // Création du navigateur principal
 const Stack = createStackNavigator();
