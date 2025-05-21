@@ -126,50 +126,73 @@ const PaymentMethodsScreen = () => {
 
   // Initier le paiement
   const initiatePayment = async () => {
-    if (!validateForm()) return;
+  if (!validateForm()) return;
 
-    setProcessingPayment(true);
-    try {
-      // Préparer les données de paiement
-      const paymentData = {
-        plan: plan.id,
-        payment_method: selectedMethod,
-      };
+  setProcessingPayment(true);
+  try {
+    // Préparer les données de paiement
+    const paymentData = {
+      plan: plan.id,
+      payment_method: selectedMethod,
+    };
 
-      // Ajouter le numéro de téléphone si nécessaire
-      if (selectedMethod === 'CM_MOBILE' || selectedMethod === 'CM_MTN' || selectedMethod === 'CM_ORANGE') {
-        paymentData.phone_number = phoneNumber.replace(/\s+/g, '');
+    // Ajouter le numéro de téléphone si nécessaire
+    if (selectedMethod === 'CM_MOBILE' || selectedMethod === 'CM_MTN' || selectedMethod === 'CM_ORANGE') {
+      // Nettoyer le numéro et ajouter le préfixe +237 si nécessaire
+      let formattedNumber = phoneNumber.replace(/\s+/g, '');
+      if (!formattedNumber.startsWith('+237')) {
+        formattedNumber = '+237' + formattedNumber;
       }
-
-      // Envoyer la requête d'initialisation de paiement
-      const response = await apiServices.subscriptions.initiatePayment(paymentData);
-      
-      if (response.data && response.data.payment) {
-        // Stocker la référence de paiement pour la vérification
-        setPaymentReference(response.data.payment.reference);
-        
-        // Si c'est un paiement par carte ou PayPal et qu'il y a une URL d'autorisation
-        if ((selectedMethod === 'CARD' || selectedMethod === 'PAYPAL') && response.data.payment.authorization_url) {
-          // Ouvrir l'URL de paiement dans un navigateur
-          Linking.openURL(response.data.payment.authorization_url);
-        }
-        
-        // Montrer l'écran de vérification
-        setVerification(true);
-        
-        // Commencer à vérifier l'état du paiement à intervalles réguliers
-        const interval = setInterval(() => verifyPayment(response.data.payment.reference), 5000);
-        setVerificationInterval(interval);
-      } else {
-        Alert.alert('Erreur', 'Une erreur est survenue lors de l\'initialisation du paiement. Veuillez réessayer.');
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'initialisation du paiement:', error);
-      Alert.alert('Erreur', 'Impossible d\'initier le paiement. Veuillez réessayer.');
-    } finally {
-      setProcessingPayment(false);
+      paymentData.phone_number = formattedNumber;
+      console.log('Numéro de téléphone formaté:', paymentData.phone_number);
     }
-  };
+
+    console.log('Données de paiement à envoyer:', paymentData);
+
+    // Envoyer la requête d'initialisation de paiement
+    const response = await apiServices.subscriptions.initiatePayment(paymentData);
+    
+    console.log('Réponse d\'initialisation de paiement:', response.data);
+    
+    if (response.data && response.data.payment) {
+      // Stocker la référence de paiement pour la vérification
+      setPaymentReference(response.data.payment.reference);
+      
+      // Si c'est un paiement par carte ou PayPal et qu'il y a une URL d'autorisation
+      if ((selectedMethod === 'CARD' || selectedMethod === 'PAYPAL') && response.data.payment.authorization_url) {
+        // Ouvrir l'URL de paiement dans un navigateur
+        Linking.openURL(response.data.payment.authorization_url);
+      }
+      
+      // Montrer l'écran de vérification
+      setVerification(true);
+      
+      // Commencer à vérifier l'état du paiement à intervalles réguliers
+      const interval = setInterval(() => verifyPayment(response.data.payment.reference), 5000);
+      setVerificationInterval(interval);
+    } else {
+      Alert.alert('Erreur', 'Une erreur est survenue lors de l\'initialisation du paiement. Veuillez réessayer.');
+    }
+  } catch (error) {
+    console.error('Détails de l\'erreur:', error.response?.data);
+    console.error('Erreur lors de l\'initialisation du paiement:', error);
+    
+    // Message d'erreur plus informatif
+    let errorMessage = 'Impossible d\'initier le paiement. Veuillez réessayer.';
+    
+    if (error.response?.data?.payment) {
+      errorMessage = error.response.data.payment;
+    } else if (error.response?.data?.details) {
+      // Formater les détails d'erreur
+      const details = error.response.data.details;
+      errorMessage = `${errorMessage}\n\nDétails: ${JSON.stringify(details)}`;
+    }
+    
+    Alert.alert('Erreur', errorMessage);
+  } finally {
+    setProcessingPayment(false);
+  }
+};
 
   // Vérifier l'état du paiement
   const verifyPayment = async (reference) => {

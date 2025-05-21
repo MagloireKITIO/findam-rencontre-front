@@ -33,31 +33,39 @@ const SubscriptionPlansScreen = () => {
 
   // Charger les données des plans et de l'abonnement actif
   const loadData = async () => {
-    setLoading(true);
-    try {
-      // Charger les plans d'abonnement
-      const plansResponse = await apiServices.subscriptions.getSubscriptionPlans();
+  setLoading(true);
+  try {
+    // Charger les plans d'abonnement
+    const plansResponse = await apiServices.subscriptions.getSubscriptionPlans();
+    
+    if (plansResponse.data) {
+      // Vérifier si les données sont dans un format paginé
+      const plansData = plansResponse.data.results || plansResponse.data;
       
-      if (plansResponse.data) {
-        const sortedPlans = plansResponse.data.sort((a, b) => a.price - b.price);
+      if (Array.isArray(plansData)) {
+        const sortedPlans = plansData.sort((a, b) => a.price - b.price);
         setPlans(sortedPlans);
+      } else {
+        console.warn('Format des données de plans inattendu:', plansResponse.data);
+        setPlans([]);
       }
-
-      // Vérifier si l'utilisateur a déjà un abonnement actif
-      const statusResponse = await apiServices.subscriptions.getSubscriptionStatus();
-      
-      if (statusResponse.data) {
-        if (statusResponse.data.is_premium) {
-          setActiveSubscription(statusResponse.data.subscription);
-        }
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des plans d\'abonnement:', error);
-      Alert.alert('Erreur', 'Impossible de charger les plans d\'abonnement. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // Vérifier si l'utilisateur a déjà un abonnement actif
+    const statusResponse = await apiServices.subscriptions.getSubscriptionStatus();
+    
+    if (statusResponse.data) {
+      if (statusResponse.data.is_premium) {
+        setActiveSubscription(statusResponse.data.subscription);
+      }
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des plans d\'abonnement:', error);
+    Alert.alert('Erreur', 'Impossible de charger les plans d\'abonnement. Veuillez réessayer.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Sélectionner un plan
   const handleSelectPlan = (plan) => {
