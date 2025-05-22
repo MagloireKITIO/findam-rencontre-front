@@ -21,6 +21,7 @@ import EmptyState from '../../components/common/EmptyState';
 import Button from '../../components/common/Button';
 import ProfileCard from '../../components/discovery/ProfileCard';
 import FilterModal from '../../components/discovery/FilterModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 120;
@@ -32,6 +33,7 @@ const DiscoveryScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [noMoreProfiles, setNoMoreProfiles] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const insets = useSafeAreaInsets();
 
 
   // Animations
@@ -189,23 +191,40 @@ const DiscoveryScreen = () => {
       );
 
       if (isMatch) {
-        Alert.alert(
-          'Nouveau match!',
-          `Vous avez matché avec ${profile.first_name || profile.username}!`,
-          [
-            { 
-              text: 'Continuer', 
-              style: 'cancel' 
-            },
-            { 
-              text: 'Envoyer un message', 
-              onPress: () => {
-                // Navigation vers la conversation sera implémentée plus tard
-              } 
+  Alert.alert(
+    'Nouveau match!',
+    `Vous avez matché avec ${profile.first_name || profile.username}!`,
+    [
+      { 
+        text: 'Continuer', 
+        style: 'cancel' 
+      },
+      { 
+        text: 'Envoyer un message', 
+        onPress: async () => {
+          try {
+            // Créer ou récupérer une conversation existante avec cet utilisateur
+            const response = await apiServices.messaging.getConversationWithUser(profile.id);
+            
+            if (response.data) {
+              // Naviguer vers la conversation
+              navigation.navigate('Messages', {
+                screen: 'Conversation',
+                params: {
+                  conversationId: response.data.id,
+                  otherUser: profile
+                }
+              });
             }
-          ]
-        );
+          } catch (error) {
+            console.error('Erreur lors de la navigation vers la conversation:', error);
+            Alert.alert('Erreur', 'Impossible d\'ouvrir la conversation. Veuillez réessayer.');
+          }
+        } 
       }
+    ]
+  );
+}
     } catch (error) {
       console.error('Erreur lors de la vérification des matchs:', error);
     }
@@ -267,10 +286,16 @@ const DiscoveryScreen = () => {
     extrapolate: 'clamp'
   });
 
+  const headerStyle = {
+    ...styles.header,
+    paddingTop: Math.max(60, insets.top + 10), // Au moins 10px après la zone sécurisée
+    paddingBottom: 20,
+  };
+
   return (
   <View style={styles.container}>
     {/* En-tête avec bouton de filtre */}
-    <View style={styles.header}>
+    <View style={headerStyle}>
       <Text style={styles.headerTitle}>Découvrir</Text>
       <TouchableOpacity
         style={styles.filterButton}

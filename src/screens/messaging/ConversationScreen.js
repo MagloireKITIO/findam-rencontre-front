@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../constants/colors';
 import apiServices from '../../services/api';
 import { useWebSocket } from '../../contexts/WebSocketContext';
@@ -25,6 +26,7 @@ import MessageBubble from '../../components/messaging/MessageBubble';
 const ConversationScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const insets = useSafeAreaInsets(); // Récupérer les insets de zone sécurisée
   const { conversationId, otherUser } = route.params;
   const { 
     connectWebSocket, 
@@ -39,9 +41,25 @@ const ConversationScreen = () => {
   const [messageText, setMessageText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   
   const flatListRef = useRef(null);
   const textInputRef = useRef(null);
+  
+  // Gestion du clavier
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
   
   // Initialiser la connexion WebSocket et charger les messages au montage
   useEffect(() => {
@@ -467,11 +485,7 @@ const ConversationScreen = () => {
   }
   
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : null}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
+    <View style={styles.container}>
       {/* Indicateur de statut WebSocket */}
       {connectionStatus !== 'connected' && (
         <View style={[
@@ -499,7 +513,12 @@ const ConversationScreen = () => {
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.messagesContainer}
+        contentContainerStyle={[
+          styles.messagesContainer, 
+          { 
+            paddingBottom: keyboardHeight > 0 ? 80 : 20 // Ajuster selon la présence du clavier
+          }
+        ]}
         inverted={true}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -511,38 +530,49 @@ const ConversationScreen = () => {
       />
       
       {/* Zone de saisie du message */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          ref={textInputRef}
-          style={styles.messageInput}
-          placeholder="Votre message..."
-          value={messageText}
-          onChangeText={(text) => {
-            setMessageText(text);
-            if (text.trim()) {
-              sendTypingStatus();
-            }
-          }}
-          multiline
-          maxLength={1000}
-        />
-        
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (!messageText.trim() || sending || connectionStatus !== 'connected') && styles.sendButtonDisabled
-          ]}
-          onPress={sendMessage}
-          disabled={!messageText.trim() || sending || connectionStatus !== 'connected'}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color={colors.textInverted} />
-          ) : (
-            <Ionicons name="send" size={20} color={colors.textInverted} />
-          )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <View style={[
+          styles.inputContainer,
+          { 
+            paddingBottom: Math.max(insets.bottom, 8),
+            marginBottom: keyboardHeight > 0 && Platform.OS === 'android' ? keyboardHeight - insets.bottom : 0
+          }
+        ]}>
+          <TextInput
+            ref={textInputRef}
+            style={styles.messageInput}
+            placeholder="Votre message..."
+            value={messageText}
+            onChangeText={(text) => {
+              setMessageText(text);
+              if (text.trim()) {
+                sendTypingStatus();
+              }
+            }}
+            multiline
+            maxLength={1000}
+          />
+          
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!messageText.trim() || sending || connectionStatus !== 'connected') && styles.sendButtonDisabled
+            ]}
+            onPress={sendMessage}
+            disabled={!messageText.trim() || sending || connectionStatus !== 'connected'}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color={colors.textInverted} />
+            ) : (
+              <Ionicons name="send" size={20} color={colors.textInverted} />
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -649,7 +679,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 12,
+    padding: 10,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.card,

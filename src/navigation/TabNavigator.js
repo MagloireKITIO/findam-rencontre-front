@@ -1,9 +1,10 @@
-// src/navigation/TabNavigator.js (modification)
+// src/navigation/TabNavigator.js
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../constants/colors';
 
 // Import des navigateurs et écrans
@@ -28,6 +29,9 @@ const PlaceholderScreen = ({ route }) => (
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
+  // Récupérer les insets de la zone de sécurité
+  const insets = useSafeAreaInsets();
+  
   // État pour gérer les badges de notification (sera implémenté plus tard)
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -86,9 +90,23 @@ const TabNavigator = () => {
         tabBarInactiveTintColor: colors.textLight,
         headerShown: false,
         tabBarStyle: {
-          height: 60,
-          paddingBottom: 10,
+          height: 60 + insets.bottom, // Ajuster la hauteur en fonction des insets
+          paddingBottom: Math.max(10, insets.bottom), // Minimum 10px ou insets.bottom
           paddingTop: 10,
+          backgroundColor: colors.card,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          elevation: 8, // Ombre sur Android
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          // Suppression de "position: absolute" pour éviter les superpositions problématiques
+          // La tabBar sera cachée pour certains écrans (comme Conversation) via un autre mécanisme
+        },
+        // Ajouter un espace pour éviter que le contenu ne disparaisse sous la tabBar
+        tabBarItemStyle: {
+          paddingBottom: insets.bottom > 0 ? 0 : 5,
         },
       })}
     >
@@ -110,9 +128,32 @@ const TabNavigator = () => {
       <Tab.Screen 
         name="Messages" 
         component={MessagingNavigator} 
-        options={{ 
-          title: 'Messages',
-          tabBarBadge: unreadMessages > 0 ? unreadMessages : null
+        options={({ route }) => {
+          // Vérifier si nous sommes dans l'écran de Conversation (sous-route)
+          const routeName = route.state 
+            ? route.state.routes[route.state.index].name 
+            : route.params?.screen || 'Conversations';
+          
+          return {
+            title: 'Messages',
+            tabBarBadge: unreadMessages > 0 ? unreadMessages : null,
+            // Cacher la TabBar lorsqu'on est dans l'écran de conversation
+            tabBarStyle: routeName === 'Conversation' 
+              ? { display: 'none' } 
+              : {
+                  height: 60 + insets.bottom,
+                  paddingBottom: Math.max(10, insets.bottom),
+                  paddingTop: 10,
+                  backgroundColor: colors.card,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.border,
+                  elevation: 8,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: -2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 3,
+                }
+          };
         }}
       />
       <Tab.Screen 

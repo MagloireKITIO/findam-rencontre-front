@@ -130,11 +130,30 @@ const [showFilterModal, setShowFilterModal] = useState(false);
     return age;
   };
 
-  // Naviguer vers la conversation
-  const navigateToConversation = (matchId, user) => {
-    // Cette fonction sera implémentée plus tard
-    Alert.alert('Information', 'La messagerie sera implémentée prochainement.');
-  };
+ const navigateToConversation = async (matchId, user) => {
+  try {
+    // Obtenir ou créer une conversation avec cet utilisateur
+    const response = await apiServices.messaging.getConversationWithUser(user.id);
+    
+    if (response.data) {
+      // Naviguer vers l'écran de conversation
+      // Utiliser la navigation imbriquée pour s'assurer que la tabBar est correctement cachée
+      navigation.navigate('Messages', {
+        screen: 'Conversation',
+        params: {
+          conversationId: response.data.id,
+          otherUser: user
+        },
+        initial: false
+      });
+    } else {
+      throw new Error("Impossible de créer une conversation");
+    }
+  } catch (error) {
+    console.error('Erreur lors de la navigation vers la conversation:', error);
+    Alert.alert('Erreur', 'Impossible d\'ouvrir la conversation. Veuillez réessayer.');
+  }
+};
 
   // Naviguer vers le profil de l'utilisateur
   const navigateToUserProfile = (userId) => {
@@ -176,21 +195,21 @@ const [showFilterModal, setShowFilterModal] = useState(false);
       handleRefresh();
       
       Alert.alert(
-        'Nouveau match!',
-        'Vous avez un nouveau match! Voulez-vous lui envoyer un message?',
-        [
-          { 
-            text: 'Plus tard', 
-            style: 'cancel' 
-          },
-          { 
-            text: 'Envoyer un message', 
-            onPress: () => {
-              // Navigation vers la conversation sera implémentée plus tard
-            } 
-          }
-        ]
-      );
+  'Nouveau match!',
+  'Vous avez un nouveau match! Voulez-vous lui envoyer un message?',
+  [
+    { 
+      text: 'Plus tard', 
+      style: 'cancel' 
+    },
+    { 
+      text: 'Envoyer un message', 
+      onPress: () => {
+        navigateToConversation(null, profile); // Passer l'utilisateur matché
+      } 
+    }
+  ]
+);
     } catch (error) {
       console.error('Erreur lors du like:', error);
       Alert.alert('Erreur', 'Impossible de liker cet utilisateur. Veuillez réessayer.');
